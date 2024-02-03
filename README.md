@@ -6,7 +6,7 @@ Note:
 
 - The multivariate analysis is using all significant univariate p-values < 0.1.
 
-- This is an improvement on the below source's code, gathering all results in a .csv.
+- This is an improvement on the below source's code.
 
 Sources:
 
