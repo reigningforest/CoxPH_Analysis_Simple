@@ -1,7 +1,7 @@
 ##### Purpose #####
 #Cox regression analysis - both univariate and multivariate
 
-#Note: To successfully use this without modifying the code, your datatable should have:
+#Note: To successfully use this without modifying the code, your datatable may have:
 # Column 1: pin
 # Column 2 to n: survival variables and events
 # Column n+: covariates
@@ -19,11 +19,14 @@ setwd("E:/file/path")
 #### Data ####
 ## Please change these as needed!
 data_full <- read.csv('datatable.csv')
-survivaltime = c('yearevent1', 'yearevent2', 'yearevent1', 'yearevent2')
-survivalvars = c('event1', 'event2', 'event3', 'event4')
-covariates <- colnames(redcap_ctcae2 %>%
-                         select(which(colnames(redcap_ctcae2)=="age"):length(colnames(redcap_ctcae2))))
-# Note: Need to change "age" to whatever covariate is left most in your dataframe
+# If you have multiple survival events that you would like to analyze separately, this is possible as seen below
+survivaltime <- c('yeareventA_dead', 'yeareventA_censor', 'yeareventB_dead', 'yeareventB_censor')
+survivalvars <- c('eventA', 'eventA', 'eventB', 'eventB')
+
+# You will have to change "Cov1" to whatever covariate is left most in your dataframe
+covariates <- colnames(data_full %>%
+                         select(which(colnames(data_full)=="Cov1"):length(colnames(data_full))))
+
 
 #### Functions ####
 CoxPHCustom_Univ <- function(survivalvars, survivaltime, covariates, data_full) {
@@ -60,7 +63,7 @@ CoxPHCustom_Univ <- function(survivalvars, survivaltime, covariates, data_full) 
 }
 
 
-### CTCAE pneumo and esoph
+## Set Variables to Factors.
 data_full2 <- data_full %>%
   mutate_at(vars(which(colnames(data_full)=="age"):length(colnames(data_full))),
             as.factor)
@@ -80,9 +83,9 @@ univ_results2 <- univ_results1 %>%
 univ_results2_sig <- univ_results1 %>%
   filter(`Pr(>|z|)` <= 0.1) %>%
   mutate(multi_covariates = str_sub(covariate, 1, -2),
-         time = if_else(str_detect(event, "esoph"),
-                        "yearesoph",
-                        "yearpneum")) %>%
+         time = if_else(str_detect(event, "eventA"),
+                        "yeareventA_dead",
+                        "yeareventA_censor")) %>%
   group_by(time, event) %>%
   distinct(multi_covariates) %>%
   mutate(multi_covariates_comb = str_c(multi_covariates, collapse = "+")) %>%
@@ -97,7 +100,7 @@ multi_formulas <- sapply(multi_surv,
                          function(x) as.formula(paste(x)))
 
 multi_models <- lapply(multi_formulas,
-                       function(x){coxph(x, data = redcap_ctcae2, ties = "breslow")})
+                       function(x){coxph(x, data = data_full, ties = "breslow")})
 
 multi_results <- lapply(multi_models,
                               function(x){ 
